@@ -1,108 +1,92 @@
 // Copyright 2021 NNTU-CS
 #include <string>
-#include <map>
+#include <climits>
 #include "tstack.h"
 
-int priorGet(char symbol) {
-  switch (symbol) {
-  case '(':
-    return 0;
-  case ')':
-    return 1;
-  case '+':
-    return 2;
-  case '-':
-    return 2;
-  case '*':
+int prec(char c) {
+  if (c == '*' || c == '/') {
     return 3;
-  case '/':
-    return 3;
-  case ' ':
-    return -100;
   }
-  return -1;
+  if (c == '+' || c == '-') {
+    return 4;
+  }
+  if (c == '&') {
+    return 8;
+  }
+  if (c == '^') {
+    return 9;
+  }
+  if (c == '|') {
+    return 10;
+  }
+  return INT_MAX;
+}
+bool isOperand(char c) {
+  return (c >= '0' && c <= '9');
 }
 
 std::string infx2pstfx(std::string inf) {
-  TStack<char, 100> stack;
-  std::string output = "";
-  int prior = 0;
-  int gratPrior = -1;
-  for (auto& op : inf) {
-    prior = priorGet(op);
-    gratPrior = priorGet(stack.get());
-    if (op == '\n') {
-      while (priorGet(stack.get()) > 1) {
-        output += stack.pop();
-        output += " ";
+  TStack<char, 100> s;
+  std::string postfix;
+  for (char c : inf) {
+    if (c == '(') {
+      s.push(c);
+    } else if (c == ')') {
+      while (s.top() != '(') {
+        postfix.push_back(s.top());
+        postfix.push_back(' ');
+        s.pop();
       }
-      stack.pop();
-    }
-    if (prior == -1) {
-      output += op;
-      output += " ";
-    } else if (prior == 0) {
-      stack.push(op);
-    } else if (prior == 1) {
-      while (priorGet(stack.get()) > 0) {
-        output += stack.pop();
-        output += " ";
-      }
-      stack.pop();
-    } else if (prior > gratPrior || stack.isEmpty()) {
-      stack.push(op);
-    } else if (prior <= gratPrior && prior > 1) {
-      while (priorGet(stack.get()) > 1) {
-        output += stack.pop();
-        output += " ";
-      }
-      stack.push(op);
-    }
-  }
-  while (priorGet(stack.get()) > 1) {
-    output += stack.pop();
-    output += " ";
-  }
-  std::string out = "";
-  for (int i = 0; i < output.length() - 1; ++i) {
-    out += output[i];
-  }
-  return out;
-}
-int opreoretat(int a, int b, char op) {
-  switch (op) {
-  case '+':
-    return a + b;
-  case '-':
-    return a - b;
-  case '*':
-    return a * b;
-  case '/':
-    return a / b;
-  }
-  return 0;
-}
-int eval(std::string pref) {
-  TStack<int, 100> stack1;
-  int preoret = 0;
-  int prior = 0;
-  for (auto& op : pref) {
-    prior = priorGet(op);
-    if (prior == -100) {
-      continue;
-    }
-    if (prior == -1) {
-      stack1.push(op - 48);
+      s.pop();
+    } else if (isOperand(c)) {
+      postfix.push_back(c);
+      postfix.push_back(' ');
     } else {
-      int peremen = 0;
-      while (!(peremen + stack1.isEmpty())) {
-        peremen += 1;
-        int a = stack1.pop();
-        int b = stack1.pop();
-        preoret = opreoretat(b, a, op);
-        stack1.push(preoret);
+      while (!s.isEmpty() && prec(c) >= prec(s.top())) {
+        postfix.push_back(s.top());
+        postfix.push_back(' ');
+        s.pop();
+      }
+      s.push(c);
+    }
+  }
+  while (!s.isEmpty()) {
+    postfix.push_back(s.top());
+    postfix.push_back(' ');
+    s.pop();
+  }
+  std::string www;
+  if (postfix[postfix.length() - 1] == ' ') {
+    for (int i = 0; i < postfix.length() - 1; i++) {
+      www += postfix[i];
+    }
+  }
+  return www;
+}
+
+int eval(std::string post) {
+  std::string v;
+  for (char c : post) if (c != ' ') v += c;
+  post = v;
+  TStack<int, 100> stack;
+  for (char c : post) {
+    if (c >= '0' && c <= '9') {
+      stack.push(c - '0');
+    } else {
+      int x = stack.top();
+      stack.pop();
+      int y = stack.top();
+      stack.pop();
+      if (c == '+') {
+        stack.push(y + x);
+      } else if (c == '-') {
+        stack.push(y - x);
+      } else if (c == '*') {
+        stack.push(y * x);
+      } else if (c == '/') {
+        stack.push(y / x);
       }
     }
   }
-  return stack1.pop();
+  return stack.top();
 }
