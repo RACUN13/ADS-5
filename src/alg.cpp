@@ -3,22 +3,15 @@
 #include <map>
 #include "tstack.h"
 
-int getPrior(char op) {
-  switch (op) {
-    case '(':
-      return 0;
-    case ')':
-      return 1;
-    case '+':
-      return 2;
-    case '-':
-      return 2;
-    case '*':
-      return 3;
-    case '/':
-      return 3;
-  }
-  return -1;
+int prior(char ch) {
+    if (ch == ')' || ch == '(')
+        return 0;
+    if (ch == '+' || ch == '-')
+        return 1;
+    if (ch == '*' || ch == '/')
+        return 2;
+    else
+        return 0;
 }
 
 std::string infx2pstfx(std::string inf) {
