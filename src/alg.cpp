@@ -16,84 +16,62 @@ int prior(char ch) {
 
 std::string infx2pstfx(std::string inf) {
   TStack<char, 100> stack1;
-  std::string str = "";
-  int result = 0;
-  for (char a : inf) {
-    bool truefalse = true;
-    if (getPrior(a) == 0) {
-      stack1.push(a);
-      truefalse = false;
-    }
-    if (getPrior(a) == -1) {
-      str = str + a;
-      str = str + ' ';
-      truefalse = false;
-    }
-    if (getPrior(a) > getPrior(stack1.get())) {
-      stack1.push(a);
-      truefalse = false;
-    }
-    if (stack1.isEmpty() && getPrior(a) != -1) {
-      stack1.push(a);
-      truefalse = false;
-    }
-    if (a != ')' && truefalse) {
-      while (getPrior(stack1.get()) >= getPrior(a)) {
-        str = str + stack1.pop();
-        str = str + ' ';
-      }
-      stack1.push(a);
-    }
-    if (a == ')') {
-      while (stack1.get() != '(') {
-        str = str + stack1.pop();
-        str = str + ' ';
+  std::string s = "";
+  for (int i = 0; i < inf.length(); i++) {
+    if ((inf[i] >= '0') && (inf[i] <= '9')) {
+      s += inf[i];
+      s += " ";
+    } else if (inf[i] == '(') {
+      stack1.push(inf[i]);
+    } else if (isOperand(inf[i])) {
+        while (!stack1.isEmpty() &&
+               getPrior(inf[i]) <= getPrior(stack1.getValue())) {
+            s += stack1.getValue();
+            s += " ";
+            stack1.pop();
+        }
+        stack1.push(inf[i]);
+    } else if (inf[i] == ')') {
+        while (!stack1.isEmpty() && stack1.getValue() != '(') {
+        s += stack1.getValue();
+        s += " ";
+        stack1.pop();
       }
       stack1.pop();
     }
-    if (result == inf.size() - 1) {
-      while (!stack1.isEmpty()) {
-        str = str + stack1.pop();
-        if (stack1.pri() != -1) {
-          str = str + ' ';
-        }
-      }
-    }
-    ++result;
   }
-  return str;
+  while (!stack1.isEmpty()) {
+    s += stack1.getValue();
+    s += " ";
+    stack1.pop();
+  }
+  s.pop_back();
+  return s;
 }
 
-int eval(std::string post) {
+int eval(std::string pref) {
   TStack<int, 100> stack2;
-  for (char i : post) {
-    if (i == '+') {
-      int j = stack2.pop();
-      j = j + stack2.pop();
-      stack2.push(j);
-    }
-    if (i == '-') {
-      int j = stack2.pop();
-      j = stack2.pop() - j;
-      stack2.push(j);
-    }
-    if (i == '*') {
-      int j = stack2.pop();
-      j = j * stack2.pop();
-      stack2.push(j);
-    }
-    if (i == '/') {
-      int j = stack2.pop();
-      j = stack2.pop() / j;
-      stack2.push(j);
-    }
-    if (i == ' ') {
+  int k, l, g;
+  for (int i = 0; i < pref.length(); i++) {
+    if (pref[i] == ' ') {
       continue;
-    }
-    if ((i - '0') > 0) {
-      int j = i - '0';
-      stack2.push(j);
+    } else if (pref[i] >= '0' && pref[i] <= '9') {
+      k = pref[i] - '0';
+      stack2.push(k);
+    } else if (pref[i] == '+' || pref[i] == '-' ||
+          pref[i] == '*' || pref[i] == '/') {
+      l = stack2.getValue();
+      stack2.pop();
+      g = stack2.getValue();
+      stack2.pop();
+      if (pref[i] == '+') stack2.push(g + l);
+      else if (pref[i] == '-')
+        stack2.push(g - l);
+      else if (pref[i] == '*')
+        stack2.push(g * l);
+      else if (pref[i] == '/')
+        stack2.push(g / l);
     }
   }
-  return stack2.get();
+  return stack2.getValue();
 }
